@@ -1,26 +1,37 @@
+// App.tsx
 import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import ProtectedRoute from './ProtectedRoute';
+import LoginComponent from './components/login';
+import { useAuth } from './context/auth-context';
+import Home from './components/home';
+import SignUpComponent from './components/signup';
 
-function App() {
+const App: React.FC = () => {
+  const { accessToken } = useAuth();
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Routes>
+      <Route path="/login" element={<LoginComponent />} />
+      <Route path="/signup" element={<SignUpComponent />} />
+
+      {/* Apply ProtectedRoute directly on the component, not as Route */}
+      <Route
+        path="/home"
+        element={
+          <ProtectedRoute>
+            <Home />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Redirect to /items if authenticated, else to /login */}
+      <Route
+        path="/"
+        element={<Navigate to={accessToken ? '/home' : '/login'} />}
+      />
+    </Routes>
   );
-}
+};
 
 export default App;
