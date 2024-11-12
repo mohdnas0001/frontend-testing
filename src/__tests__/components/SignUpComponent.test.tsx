@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, fireEvent, screen, waitFor } from '@testing-library/react';
 import { ToastContainer } from 'react-toastify';
-import { MemoryRouter, useNavigate } from 'react-router-dom';
+import { MemoryRouter } from 'react-router-dom';
 import { signup } from '../../api/auth';
 import SignUpComponent from '../../components/signup';
 import '@testing-library/jest-dom';
@@ -17,13 +17,17 @@ jest.mock('react-router-dom', () => ({
   useNavigate: () => mockNavigate,
 }));
 
-jest.mock('react-toastify', () => ({
-  toast: {
-    error: jest.fn(),
-    success: jest.fn(),
-  },
-  ToastContainer: jest.fn(() => <div />),
-}));
+jest.mock('react-toastify', () => {
+  const originalModule = jest.requireActual('react-toastify');
+  return {
+    ...originalModule,
+    toast: {
+      error: jest.fn(),
+      success: jest.fn(),
+    },
+  };
+});
+
 
 describe('SignUpComponent', () => {
   beforeEach(() => {
@@ -54,7 +58,6 @@ test('displays error toast on password mismatch', async () => {
     </MemoryRouter>
   );
 
-  // Fill out the form with mismatched passwords
   fireEvent.change(screen.getByPlaceholderText('Username'), {
     target: { value: 'testuser' },
   });
@@ -62,21 +65,17 @@ test('displays error toast on password mismatch', async () => {
     target: { value: 'password123' },
   });
   fireEvent.change(screen.getByPlaceholderText('Confirm Password'), {
-    target: { value: 'differentpassword' },
+    target: { value: 'passafds' },
   });
 
-  // Submit the form
   fireEvent.click(screen.getByRole('button', { name: /register/i }));
 
-  // Use a function matcher to locate the error toast text
-  const errorToast = await screen.findByText((content, element) =>
-    content.includes('Passwords do not match')
-  );
-  
-  expect(errorToast).toBeInTheDocument();
+  await waitFor(() => {
+    expect(require('react-toastify').toast.error).toHaveBeenCalledWith(
+      'Passwords do not match. Please try again.'
+    );
+  });
 });
-
-
 
 test('calls signup function and navigates on successful signup', async () => {
   // Mock the signup function to resolve as a successful signup

@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { signup, UserCredentials } from '../../api/auth';
+import { signup } from '../../api/auth';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Eye, EyeSlash } from '@phosphor-icons/react';
 import { Link } from 'react-router-dom';
+import { UserCredentials } from 'types';
 
 const SignUpComponent: React.FC = () => {
   const [credentials, setCredentials] = useState<UserCredentials>({
@@ -15,6 +16,7 @@ const SignUpComponent: React.FC = () => {
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [showConfirmPassword, setShowConfirmPassword] =
     useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false); // New state for loading
   const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -28,22 +30,45 @@ const SignUpComponent: React.FC = () => {
       setConfirmPassword(value);
     }
   };
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setIsLoading(true);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (credentials.password !== confirmPassword) {
+   if (credentials.password !== confirmPassword) {
       toast.error('Passwords do not match. Please try again.');
+      setIsLoading(false);
       return;
     }
 
-    try {
-      await signup(credentials);
-        navigate('/login');
-    } catch (error) {
-      toast.error('An error occurred. Please try again.');
-      console.error(error);
+  try {
+    // Attempt signup; if successful, navigate to login page
+    await signup(credentials); // Call the signup API
+    navigate('/login');
+  } catch (error: any) {
+    console.error('Error details:', error); // Log full error details
+
+    // Check if error contains a response (common with Axios errors)
+    if (error.response) {
+      // Display specific error messages based on status codes
+      switch (error.response.status) {
+        case 400:
+          toast.error('Username already exists.');
+          break;
+        case 500:
+          toast.error('Server error. Please try again later.');
+          break;
+        default:
+          toast.error('An unexpected error occurred. Please try again.');
+      }
+    } else {
+      // Handle cases where response data is unavailable (network or other issues)
+      toast.error('Network error. Please check your connection.');
     }
-  };
+  } finally {
+    setIsLoading(false); // Reset loading state after the request completes
+  }
+};
+
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
@@ -110,9 +135,10 @@ const SignUpComponent: React.FC = () => {
           <div>
             <button
               type="submit"
-              className="w-full py-2 text-white bg-blue-600 rounded hover:bg-blue-700 focus:outline-none"
+              disabled={isLoading} // Disable the button while loading
+              className={`w-full py-2 text-white ${isLoading ? 'bg-gray-500' : 'bg-blue-600'} rounded hover:bg-blue-700 focus:outline-none`}
             >
-              Register
+              {isLoading ? 'Registering...' : 'Register'}
             </button>
           </div>
         </form>

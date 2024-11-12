@@ -1,14 +1,9 @@
 // context/AuthContext.tsx
 
-import React, {
-  createContext,
-  useState,
-  useEffect,
-  useContext,
-  ReactNode,
-} from 'react';
-import { login as loginApi } from '../../api/auth/index';
+import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
+import { login as loginApi } from '../../api/auth/index'; 
 import useAuthStore from '../../hooks/useAuthStore';
+
 
 interface AuthContextType {
   accessToken: string | null;
@@ -18,25 +13,27 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+
+
 interface AuthProviderProps {
   children: ReactNode;
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [accessToken, setAccessToken] = useState<string | null>(
-    localStorage.getItem('accessToken'),
-  );
-  const setUsername = useAuthStore((state) => state.setUsername);
+    const [accessToken, setAccessToken] = useState<string | null>(localStorage.getItem('accessToken'));
+    const setUsername = useAuthStore((state) => state.setUsername); // Access the setUsername function from the store
+
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
+      // Call the login API function defined elsewhere (e.g., apiClient-based)
       const response = await loginApi({ username: email, password });
 
       if (response.data && response.data.accessToken && response.data.user) {
         const token = response.data.accessToken;
         setAccessToken(token);
-        localStorage.setItem('accessToken', token);
-        setUsername(response.data.user.username);
+          localStorage.setItem('accessToken', token);
+       setUsername(response.data.user.username); 
 
         return true;
       } else {
@@ -45,7 +42,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     } catch (error) {
       console.error('Error logging in:', error);
-      return false;
+    throw error;
     }
   };
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useFetchItems } from '../../../hooks/useItemsHooks';
 import { Item } from '../../../../types';
 import { PencilSimple, Trash } from '@phosphor-icons/react';
@@ -11,44 +11,43 @@ import { format, isValid } from 'date-fns';
 const ItemList = () => {
   const { data: items, error, isLoading, isError, refetch } = useFetchItems();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [newItem, setNewItem] = useState({ name: '', description: '' });
-  const [editingItem, setEditingItem] = useState<Item | null>(null);
+ const [formData, setFormData] = useState<{ name: string; description: string; id: number | null }>({
+    name: '',
+    description: '',
+    id: null,
+  });
 
-  const openCreateDialog = () => {
-    setEditingItem(null);
-    setNewItem({ name: '', description: '' });
+  const openCreateDialog = useCallback(() => {
+    setFormData({ name: '', description: '', id: null });
     setIsDialogOpen(true);
-  };
+  }, []);
 
   const openEditDialog = (item: Item) => {
-    setEditingItem(item);
-    setNewItem({ name: item.name, description: item.description });
+    setFormData({ name: item.name, description: item.description, id: item.id });
     setIsDialogOpen(true);
   };
 
   const closeDialog = () => {
     setIsDialogOpen(false);
-    setNewItem({ name: '', description: '' });
+    setFormData({ name: '', description: '', id: null });
   };
 
   const handleSubmit = async () => {
-    if (!newItem.name.trim() || !newItem.description.trim()) {
+    if (!formData.name.trim() || !formData.description.trim()) {
       return toast.error("Name and description can't be empty.");
     }
     try {
-      if (editingItem) {
-        await updateItem(editingItem.id, newItem);
+      if (formData.id) {
+        await updateItem(formData.id, { name: formData.name, description: formData.description });
         toast.success('Item updated successfully!');
       } else {
-        await createItem(newItem);
+        await createItem({ name: formData.name, description: formData.description });
         toast.success('Item created successfully!');
       }
       refetch();
       closeDialog();
     } catch (err) {
-      toast.error(
-        `Failed to ${editingItem ? 'update' : 'create'} item. Please try again.`,
-      );
+      toast.error('Failed to save item. Please try again.');
     }
   };
 
@@ -82,7 +81,6 @@ const ItemList = () => {
       <ToastContainer />
       <div className="flex flex-row w-full justify-between items-center border-b border-gray-300 mb-3 md:mb-6">
         <h1 className="text-xl md:text-2xl font-bold mb-3 md:mb-6 text-center">
-          {' '}
           My Items List
         </h1>
 
@@ -105,7 +103,7 @@ const ItemList = () => {
           {items?.map((item) => (
             <div
               key={item.id}
-              className="bg-white rounded-lg p-2 md:p-6 relative border-2  border-gray-100 hover:border-blue-500 hover:shadow-xl transform hover:scale-105 transition-transform duration-300"
+              className="bg-white rounded-lg p-2 md:p-6 relative border-2 border-gray-100 hover:border-blue-500 hover:shadow-xl transform hover:scale-105 transition-transform duration-300"
             >
               <h3 className="text-xl font-semibold mb-2">{item.name}</h3>
               <p className="text-gray-700 mb-4 h-24 overflow-hidden text-ellipsis">
@@ -151,35 +149,35 @@ const ItemList = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white p-3 md:p-6 rounded-lg shadow-lg w-80 md:w-[28rem]">
             <h2 className="text-xl md:text-2xl font-semibold mb-4">
-              {editingItem ? 'Edit Item' : 'Create New Item'}
+              {formData.id ? 'Edit Item' : 'Create New Item'}
             </h2>
             <input
               type="text"
               placeholder="Item Name"
-              value={newItem.name}
-              onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
-              className="w-full p-2 border border-gray-300 rounded mb-4"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              className="w-full p-2 border border-gray-300 rounded-md mb-4"
             />
             <textarea
               placeholder="Item Description"
-              value={newItem.description}
+              value={formData.description}
               onChange={(e) =>
-                setNewItem({ ...newItem, description: e.target.value })
+                setFormData({ ...formData, description: e.target.value })
               }
-              className="w-full p-2 border border-gray-300 h-44 rounded mb-4"
+              className="w-full p-2 border border-gray-300 rounded-md mb-4"
             />
-            <div className="flex justify-end space-x-2">
+            <div className="flex justify-between items-center">
               <button
                 onClick={closeDialog}
-                className="p-2 px-4 bg-gray-300 text-black rounded-md hover:bg-gray-400 transition duration-200"
+                className="text-gray-500 hover:text-gray-700"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSubmit}
-                className="p-2 px-4 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition duration-200"
+                className="bg-blue-500 text-white py-2 px-6 rounded-md hover:bg-blue-600"
               >
-                {editingItem ? 'Update' : 'Create'}
+                {formData.id ? 'Update Item' : 'Create Item'}
               </button>
             </div>
           </div>

@@ -15,10 +15,15 @@ const useAuthStore = create<AuthState>()(
       clearUser: () => set({ username: '' }),
     }),
     {
-      name: 'auth-storage', // Unique name for the localStorage key
-      storage: createJSONStorage(() => localStorage), // Wrap localStorage using createJSONStorage
-    },
-  ),
+      name: 'auth-storage',
+      storage: createJSONStorage(() => localStorage),
+    }
+  )
 );
+
+// Ensure that the store is available on the `window` object for Cypress testing
+if (typeof window !== 'undefined') {
+  window.__store__ = useAuthStore;  // This makes it available for Cypress
+}
 
 export default useAuthStore;

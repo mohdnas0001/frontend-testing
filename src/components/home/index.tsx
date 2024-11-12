@@ -41,6 +41,7 @@ const Home = () => {
           <button
             onClick={handleLogout} // Call handleLogout when clicked
             className="p-1 md:p-2 text-base bg-red-500 text-white rounded-md shadow-lg hover:bg-red-600 transition duration-200 flex items-center justify-center"
+            aria-label="Logout"
           >
             <SignOut size={24} className="text-white" />
           </button>

@@ -1,12 +1,12 @@
 import apiClient from '../apiClient';
+import { UserCredentials } from 'types';
 
-export interface UserCredentials {
-  username: string;
-  password: string;
-}
 
 export const login = (credentials: UserCredentials) =>
   apiClient.post('/auth/login', credentials);
 
-export const signup = (data: UserCredentials) =>
-  apiClient.post('/auth/signup', data);
+export const signup = async (data: UserCredentials) => {
+  const response = await apiClient.post('/auth/signup', data);
+  return response; 
+};
+

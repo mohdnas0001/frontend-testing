@@ -1,18 +1,19 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/auth-context';
-import { UserCredentials } from '../../api/auth';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Eye, EyeSlash } from '@phosphor-icons/react';
 import { Link } from 'react-router-dom';
+import { UserCredentials } from 'types';
 
 const LoginComponent: React.FC = () => {
   const [credentials, setCredentials] = useState<UserCredentials>({
     username: '',
     password: '',
   });
-  const [showPassword, setShowPassword] = useState<boolean>(false); // State to toggle password visibility
+  const [showPassword, setShowPassword] = useState<boolean>(false); 
+const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -24,20 +25,40 @@ const LoginComponent: React.FC = () => {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const success = await login(credentials.username, credentials.password);
+  e.preventDefault();
+  setIsLoading(true);
 
-      if (success) {
-        navigate('/home');
-      } else {
-        toast.error('Login failed. Please try again.');
+  try {
+     await login(credentials.username, credentials.password);
+    navigate('/home');
+  } catch (error: any) {
+    console.error('Error details:', error); // Log full error details
+
+    // Check if error contains a response (common with Axios errors)
+    if (error.response) {
+      // Display specific error messages based on status codes
+      switch (error.response.status) {
+        case 404:
+          toast.error('User not found. Please check your username.');
+          break;
+        case 401:
+          toast.error('Invalid password. Please try again.');
+          break;
+        default:
+          toast.error('An unexpected error occurred. Please try again.');
       }
-    } catch (error) {
-      toast.error('An error occurred. Please try again.');
-      console.error(error);
+    } else {
+      // Handle cases where response data is unavailable (network or other issues)
+      toast.error('Network error. Please check your connection.');
     }
-  };
+  } finally {
+    setIsLoading(false); // Reset loading state after the request completes
+  }
+};
+
+
+
+
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword); // Toggle password visibility
@@ -86,8 +107,9 @@ const LoginComponent: React.FC = () => {
             <button
               type="submit"
               className="w-full py-2 text-white bg-blue-600 rounded hover:bg-blue-700 focus:outline-none"
+              disabled={isLoading}
             >
-              Login
+                {isLoading ? 'Logging in...' : 'Login'}
             </button>
           </div>
         </form>

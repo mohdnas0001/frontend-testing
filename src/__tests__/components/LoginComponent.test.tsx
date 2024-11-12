@@ -17,6 +17,17 @@ jest.mock('react-router-dom', () => ({
   useNavigate: () => mockNavigate,
 }));
 
+jest.mock('react-toastify', () => {
+  const originalModule = jest.requireActual('react-toastify');
+  return {
+    ...originalModule,
+    toast: {
+      error: jest.fn(),
+      success: jest.fn(),
+    },
+  };
+});
+
 describe('LoginComponent', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -128,9 +139,10 @@ describe('LoginComponent', () => {
     await waitFor(() =>
       expect(loginMock).toHaveBeenCalledWith('wronguser', 'wrongpassword'),
     );
-    expect(
-      await screen.findByText(/login failed. please try again./i),
-    ).toBeInTheDocument();
+
+    expect(require('react-toastify').toast.error).toHaveBeenCalledWith(
+      'Login failed. Please try again.'
+    );
   });
 
   test('displays error toast on login error', async () => {
@@ -155,8 +167,9 @@ describe('LoginComponent', () => {
     await waitFor(() =>
       expect(loginMock).toHaveBeenCalledWith('testuser', 'password123'),
     );
-    expect(
-      await screen.findByText(/an error occurred. please try again./i),
-    ).toBeInTheDocument();
+
+    expect(require('react-toastify').toast.error).toHaveBeenCalledWith(
+      'An error occurred. Please try again.'
+    );
   });
 });
